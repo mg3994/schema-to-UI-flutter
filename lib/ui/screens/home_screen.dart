@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:kaisel/kaisel.dart';
 import '../../providers/schema_signal_controller.dart';
 import '../../services/json_ld_parser.dart';
 import '../widgets/sample_schemas.dart';
@@ -59,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Using Kaisel responsive layout helper
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -67,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Icon(Icons.layers, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
             const Text(
-              "Schema.org Engine (BLoC Signals & Kaisel)",
+              "Schema.org Engine (BLoC Signals & Responsive)",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
@@ -213,8 +211,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ? const Center(child: Text("Enter valid JSON-LD to render schema UI"))
                       : SchemaRendererRouter(node: currentSchema),
 
-                  // TAB 2: JSON-LD Editor & Tree Inspector View with Kaisel Responsive Builder
-                  KaiselBuilder(
+                  // TAB 2: JSON-LD Editor & Tree Inspector View
+                  LayoutBuilder(
                     builder: (context, constraint) {
                       final isDesktop = constraint.maxWidth > 800;
 

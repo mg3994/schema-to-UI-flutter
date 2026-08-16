@@ -15,23 +15,23 @@ class SchemaClass {
 
   factory SchemaClass.fromJson(Map<String, dynamic> json) {
     final rawId = json['@id']?.toString() ?? '';
-    final rawLabel = _extractText(json['rdfs:label']) ?? _cleanId(rawId);
-    final comment = _extractText(json['rdfs:comment']) ?? '';
+    final rawLabel = extractText(json['rdfs:label']) ?? cleanId(rawId);
+    final comment = extractText(json['rdfs:comment']) ?? '';
 
     List<String> subClasses = [];
     final rawSub = json['rdfs:subClassOf'];
     if (rawSub is Map && rawSub.containsKey('@id')) {
-      subClasses.add(_cleanId(rawSub['@id'].toString()));
+      subClasses.add(cleanId(rawSub['@id'].toString()));
     } else if (rawSub is List) {
       for (var item in rawSub) {
         if (item is Map && item.containsKey('@id')) {
-          subClasses.add(_cleanId(item['@id'].toString()));
+          subClasses.add(cleanId(item['@id'].toString()));
         }
       }
     }
 
     return SchemaClass(
-      id: _cleanId(rawId),
+      id: cleanId(rawId),
       label: rawLabel,
       comment: comment,
       subClassOf: subClasses,
@@ -39,19 +39,19 @@ class SchemaClass {
     );
   }
 
-  static String? _extractText(dynamic val) {
+  static String? extractText(dynamic val) {
     if (val == null) return null;
     if (val is String) return val;
     if (val is Map) {
       if (val.containsKey('@value')) return val['@value'].toString();
     }
     if (val is List && val.isNotEmpty) {
-      return _extractText(val.first);
+      return extractText(val.first);
     }
     return val.toString();
   }
 
-  static String _cleanId(String id) {
+  static String cleanId(String id) {
     if (id.startsWith('https://schema.org/')) {
       return id.substring('https://schema.org/'.length);
     }
@@ -82,14 +82,14 @@ class SchemaProperty {
 
   factory SchemaProperty.fromJson(Map<String, dynamic> json) {
     final rawId = json['@id']?.toString() ?? '';
-    final label = SchemaClass._extractText(json['rdfs:label']) ?? SchemaClass._cleanId(rawId);
-    final comment = SchemaClass._extractText(json['rdfs:comment']) ?? '';
+    final label = SchemaClass.extractText(json['rdfs:label']) ?? SchemaClass.cleanId(rawId);
+    final comment = SchemaClass.extractText(json['rdfs:comment']) ?? '';
 
     List<String> domains = _extractIdList(json['schema:domainIncludes']);
     List<String> ranges = _extractIdList(json['schema:rangeIncludes']);
 
     return SchemaProperty(
-      id: SchemaClass._cleanId(rawId),
+      id: SchemaClass.cleanId(rawId),
       label: label,
       comment: comment,
       domainIncludes: domains,
@@ -101,11 +101,11 @@ class SchemaProperty {
     List<String> res = [];
     if (val == null) return res;
     if (val is Map && val.containsKey('@id')) {
-      res.add(SchemaClass._cleanId(val['@id'].toString()));
+      res.add(SchemaClass.cleanId(val['@id'].toString()));
     } else if (val is List) {
       for (var item in val) {
         if (item is Map && item.containsKey('@id')) {
-          res.add(SchemaClass._cleanId(item['@id'].toString()));
+          res.add(SchemaClass.cleanId(item['@id'].toString()));
         }
       }
     }

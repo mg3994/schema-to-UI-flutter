@@ -75,12 +75,13 @@ class JsonLdField {
     }
 
     if (val is Map<String, dynamic>) {
-      // Check if it's a typed node object or value map
+      // Support @value and multilingual objects like {"@value": "Running Shoes", "@language": "en-US"}
       if (val.containsKey('@value')) {
+        final rawVal = val['@value'];
         return JsonLdField(
           key: key,
-          value: val['@value'],
-          valueType: _detectPrimitiveType(val['@value']),
+          value: rawVal,
+          valueType: _detectPrimitiveType(rawVal),
         );
       }
       return JsonLdField(
@@ -93,10 +94,23 @@ class JsonLdField {
     if (val is List) {
       final parsedList = val.map((e) {
         if (e is Map<String, dynamic>) {
+          // Check if list item is a @value language map
+          if (e.containsKey('@value')) {
+            return e['@value'];
+          }
           return JsonLdNode.parse(e);
         }
         return e;
       }).toList();
+
+      // If array items were collapsed to plain string/primitives (e.g. multilingual names)
+      if (parsedList.isNotEmpty && parsedList.every((item) => item is String)) {
+        return JsonLdField(
+          key: key,
+          value: parsedList.first, // Extract primary string representation
+          valueType: JsonLdValueType.string,
+        );
+      }
 
       return JsonLdField(
         key: key,

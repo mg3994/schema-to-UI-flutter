@@ -32,14 +32,13 @@ class SchemaOntologyService {
       }
       _isLoaded = true;
     } catch (e) {
-      // Fallback if loading fails
       _isLoaded = true;
     }
   }
 
   void _processGraphNode(Map<String, dynamic> json) {
     final typeVal = json['@type'];
-    final id = SchemaClass._cleanId(json['@id']?.toString() ?? '');
+    final id = SchemaClass.cleanId(json['@id']?.toString() ?? '');
     if (id.isEmpty) return;
 
     List<String> types = [];
@@ -64,12 +63,11 @@ class SchemaOntologyService {
         }
       }
     } else {
-      // Might be enum instance or special instance
-      final label = SchemaClass._extractText(json['rdfs:label']) ?? id;
-      final comment = SchemaClass._extractText(json['rdfs:comment']) ?? '';
+      final label = SchemaClass.extractText(json['rdfs:label']) ?? id;
+      final comment = SchemaClass.extractText(json['rdfs:comment']) ?? '';
       String enumType = '';
       if (types.isNotEmpty) {
-        enumType = SchemaClass._cleanId(types.first);
+        enumType = SchemaClass.cleanId(types.first);
       }
       _enums[id] = SchemaEnum(
         id: id,
@@ -81,18 +79,18 @@ class SchemaOntologyService {
   }
 
   SchemaClass? getClass(String typeName) {
-    final clean = SchemaClass._cleanId(typeName);
+    final clean = SchemaClass.cleanId(typeName);
     return _classes[clean];
   }
 
   SchemaProperty? getProperty(String propName) {
-    final clean = SchemaClass._cleanId(propName);
+    final clean = SchemaClass.cleanId(propName);
     return _properties[clean];
   }
 
   List<String> getAllSubclasses(String parentType) {
     List<String> results = [];
-    final cleanParent = SchemaClass._cleanId(parentType);
+    final cleanParent = SchemaClass.cleanId(parentType);
     _classes.forEach((key, value) {
       if (value.subClassOf.contains(cleanParent)) {
         results.add(key);
@@ -102,8 +100,8 @@ class SchemaOntologyService {
   }
 
   bool isSubclassOf(String childType, String parentType) {
-    final cleanChild = SchemaClass._cleanId(childType);
-    final cleanParent = SchemaClass._cleanId(parentType);
+    final cleanChild = SchemaClass.cleanId(childType);
+    final cleanParent = SchemaClass.cleanId(parentType);
     if (cleanChild == cleanParent) return true;
 
     final sc = _classes[cleanChild];
