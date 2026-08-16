@@ -1,50 +1,87 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
+import '../../services/schema_enum_resolver.dart';
 
-/// A plug-and-play Schema Socket Widget ("female socket") that accepts any nested Schema.org node ("male plug")
-/// and dynamically slots it into the best registered socket component based on ontology inheritance.
+/// Universal Plug-and-Play Socket Manager that accepts any nested Schema.org node or value
+/// and dynamically slots it into the best fitting component socket.
 class SchemaWidgetSocket extends StatelessWidget {
-  final JsonLdNode? node;
-  final String slotName; // e.g. 'seller', 'brand', 'author', 'offers', 'location'
-  final Widget Function(BuildContext context, JsonLdNode node)? fallbackBuilder;
+  final dynamic value; // JsonLdNode, List, String (Enum URL), or Primitive
+  final String slotName; // e.g., 'seller', 'availability', 'location', 'offers'
 
   const SchemaWidgetSocket({
     super.key,
-    required this.node,
+    required this.value,
     required this.slotName,
-    this.fallbackBuilder,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (node == null) return const SizedBox.shrink();
+    if (value == null) return const SizedBox.shrink();
 
-    final ontology = SchemaOntologyService();
-    final typeName = node!.primaryType;
-
-    // Female socket matching registered male plugins
-    if (ontology.isSubclassOf(typeName, 'Organization') || ontology.isSubclassOf(typeName, 'Person')) {
-      return SellerSocketPlugin(node: node!, slotName: slotName);
+    // Handle String / Enum URLs
+    if (value is String) {
+      final str = value.toString();
+      if (str.startsWith('https://schema.org/') || str.startsWith('http://schema.org/') || str.startsWith('schema:')) {
+        final enumDetails = SchemaEnumResolver.resolve(str);
+        return EnumSocketPlugin(details: enumDetails);
+      }
+      return SelectableText(str);
     }
 
-    if (ontology.isSubclassOf(typeName, 'Offer')) {
-      return OfferSocketPlugin(node: node!);
+    // Handle Lists
+    if (value is List) {
+      final list = value as List;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: list.map((item) => SchemaWidgetSocket(value: item, slotName: slotName)).toList(),
+      );
     }
 
-    if (ontology.isSubclassOf(typeName, 'AggregateRating') || ontology.isSubclassOf(typeName, 'Rating')) {
-      return RatingSocketPlugin(node: node!);
+    // Handle JsonLdNode
+    if (value is JsonLdNode) {
+      final node = value as JsonLdNode;
+      final ontology = SchemaOntologyService();
+      final typeName = node.primaryType;
+
+      if (ontology.isSubclassOf(typeName, 'Organization') || ontology.isSubclassOf(typeName, 'Person')) {
+        return SellerSocketPlugin(node: node, slotName: slotName);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'Offer')) {
+        return OfferSocketPlugin(node: node);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'AggregateRating') || ontology.isSubclassOf(typeName, 'Rating')) {
+        return RatingSocketPlugin(node: node);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'Place') || ontology.isSubclassOf(typeName, 'PostalAddress')) {
+        return PlaceSocketPlugin(node: node);
+      }
+
+      return GenericNodeSocketPlugin(node: node, slotName: slotName);
     }
 
-    if (ontology.isSubclassOf(typeName, 'Place') || ontology.isSubclassOf(typeName, 'PostalAddress')) {
-      return PlaceSocketPlugin(node: node!);
-    }
+    return SelectableText(value.toString());
+  }
+}
 
-    if (fallbackBuilder != null) {
-      return fallbackBuilder!(context, node!);
-    }
+/// Enum Socket Plugin
+class EnumSocketPlugin extends StatelessWidget {
+  final SchemaEnumDetails details;
 
-    return GenericSocketPlugin(node: node!, slotName: slotName);
+  const EnumSocketPlugin({super.key, required this.details});
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(details.icon, size: 16, color: details.color),
+      label: Text(details.formattedLabel),
+      side: BorderSide(color: details.color.withOpacity(0.4)),
+      backgroundColor: details.color.withOpacity(0.1),
+      visualDensity: VisualDensity.compact,
+    );
   }
 }
 
@@ -159,7 +196,7 @@ class OfferSocketPlugin extends StatelessWidget {
     final theme = Theme.of(context);
     final price = node.fields['price']?.value?.toString() ?? 'N/A';
     final currency = node.fields['priceCurrency']?.value?.toString() ?? '\$';
-    final avail = node.fields['availability']?.value?.toString() ?? '';
+    final avail = node.fields['availability']?.value;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -168,11 +205,11 @@ class OfferSocketPlugin extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        cross: WrapCrossAlignment.center,
+        spacing: 8,
         children: [
           Icon(Icons.local_offer, size: 18, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
           Text(
             "$currency$price",
             style: theme.textTheme.titleMedium?.copyWith(
@@ -180,10 +217,7 @@ class OfferSocketPlugin extends StatelessWidget {
               color: theme.colorScheme.primary,
             ),
           ),
-          if (avail.contains('InStock')) ...[
-            const SizedBox(width: 8),
-            const Icon(Icons.check_circle, size: 14, color: Colors.green),
-          ],
+          if (avail != null) SchemaWidgetSocket(value: avail, slotName: 'availability'),
         ],
       ),
     );
@@ -251,12 +285,12 @@ class PlaceSocketPlugin extends StatelessWidget {
   }
 }
 
-/// Generic Socket Plugin for fallback node types
-class GenericSocketPlugin extends StatelessWidget {
+/// Generic Node Socket Plugin for fallback node types
+class GenericNodeSocketPlugin extends StatelessWidget {
   final JsonLdNode node;
   final String slotName;
 
-  const GenericSocketPlugin({super.key, required this.node, required this.slotName});
+  const GenericNodeSocketPlugin({super.key, required this.node, required this.slotName});
 
   @override
   Widget build(BuildContext context) {

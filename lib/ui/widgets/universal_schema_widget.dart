@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
+import 'schema_socket_widget.dart';
 
 class UniversalSchemaWidget extends StatelessWidget {
   final JsonLdNode node;
@@ -136,7 +137,7 @@ class UniversalSchemaWidget extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
-                // Dynamic Remaining Fields
+                // Dynamic Remaining Fields via Universal Socket Slot Architecture
                 if (remainingFields.isNotEmpty) ...[
                   const Divider(),
                   const SizedBox(height: 8),
@@ -156,6 +157,29 @@ class UniversalSchemaWidget extends StatelessWidget {
       BuildContext context, String key, JsonLdField field, int currentDepth) {
     final theme = Theme.of(context);
     final String formattedKey = _formatKeyLabel(key);
+
+    // Use Universal Socket Slot for strings/enums/nodes where appropriate
+    if (field.valueType == JsonLdValueType.url &&
+        field.value.toString().contains('schema.org')) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 130,
+              child: Text(
+                formattedKey,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ),
+            SchemaWidgetSocket(value: field.value, slotName: key),
+          ],
+        ),
+      );
+    }
 
     switch (field.valueType) {
       case JsonLdValueType.object:
@@ -177,9 +201,9 @@ class UniversalSchemaWidget extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
             children: [
-              UniversalSchemaWidget(
-                node: childNode,
-                depth: currentDepth + 1,
+              SchemaWidgetSocket(
+                value: childNode,
+                slotName: key,
               ),
             ],
           ),
@@ -199,22 +223,7 @@ class UniversalSchemaWidget extends StatelessWidget {
               ),
             ),
             children: list.map((item) {
-              if (item is JsonLdNode) {
-                return UniversalSchemaWidget(
-                  node: item,
-                  depth: currentDepth + 1,
-                );
-              }
-              return Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(vertical: 2),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(item.toString(), style: theme.textTheme.bodyMedium),
-              );
+              return SchemaWidgetSocket(value: item, slotName: key);
             }).toList(),
           ),
         );
