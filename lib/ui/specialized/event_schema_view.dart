@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
+import '../../services/schema_date_formatter.dart';
 
 class EventSchemaView extends StatelessWidget {
   final JsonLdNode node;
@@ -58,7 +59,7 @@ class EventSchemaView extends StatelessWidget {
                     if (startDate != null)
                       Chip(
                         avatar: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(startDate.split('T').first),
+                        label: Text(SchemaDateFormatter.formatDate(startDate, context)),
                         visualDensity: VisualDensity.compact,
                       ),
                   ],
@@ -100,7 +101,7 @@ class EventSchemaView extends StatelessWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  "Starts: ${_formatTime(startDate)}${endDate != null ? ' | Ends: ${_formatTime(endDate)}' : ''}",
+                                  "Starts: ${SchemaDateFormatter.formatDate(startDate, context)}${endDate != null ? ' | Ends: ${SchemaDateFormatter.formatDate(endDate, context)}' : ''}",
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ),
@@ -160,14 +161,6 @@ class EventSchemaView extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatTime(String str) {
-    if (str.contains('T')) {
-      final parts = str.split('T');
-      return "${parts[0]} at ${parts[1].substring(0, 5)}";
-    }
-    return str;
   }
 
   String? _extractLocation() {

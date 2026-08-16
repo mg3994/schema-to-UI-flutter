@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
+import '../../services/schema_date_formatter.dart';
 
 class ArticleSchemaView extends StatelessWidget {
   final JsonLdNode node;
@@ -61,7 +62,7 @@ class ArticleSchemaView extends StatelessWidget {
                     const Spacer(),
                     if (datePublished != null)
                       Text(
-                        datePublished.split('T').first,
+                        SchemaDateFormatter.formatDate(datePublished, context),
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
                       ),
                   ],
