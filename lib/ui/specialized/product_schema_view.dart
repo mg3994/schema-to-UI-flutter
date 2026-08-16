@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
+import '../widgets/schema_socket_widget.dart';
 
 class ProductSchemaView extends StatelessWidget {
   final JsonLdNode node;
@@ -15,8 +16,9 @@ class ProductSchemaView extends StatelessWidget {
     final String? sku = node.fields['sku']?.value?.toString() ?? node.fields['gtin']?.value?.toString();
     final List<String> imageUrls = _extractImages();
 
-    final Map<String, dynamic>? offer = _extractOffer();
-    final Map<String, dynamic>? rating = _extractRating();
+    final JsonLdNode? sellerNode = _extractSellerNode();
+    final JsonLdNode? offerNode = _extractOfferNode();
+    final JsonLdNode? ratingNode = _extractRatingNode();
     final List<JsonLdNode> reviews = _extractReviews();
 
     return SingleChildScrollView(
@@ -51,9 +53,9 @@ class ProductSchemaView extends StatelessWidget {
                         color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Text(
+                      child: const Text(
                         "Product",
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -103,39 +105,14 @@ class ProductSchemaView extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Rating & Review Count
-                if (rating != null) ...[
-                  Row(
-                    children: [
-                      ...List.generate(5, (index) {
-                        final double score = double.tryParse(rating['ratingValue']?.toString() ?? '5') ?? 5;
-                        return Icon(
-                          index < score.floor()
-                              ? Icons.star
-                              : (index < score ? Icons.star_half : Icons.star_border),
-                          color: Colors.amber,
-                          size: 20,
-                        );
-                      }),
-                      const SizedBox(width: 8),
-                      Text(
-                        "${rating['ratingValue'] ?? '5.0'}",
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      if (rating['reviewCount'] != null) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          "(${rating['reviewCount']} reviews)",
-                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
-                        ),
-                      ],
-                    ],
-                  ),
+                // Pluggable Rating Socket Plugin
+                if (ratingNode != null) ...[
+                  SchemaWidgetSocket(node: ratingNode, slotName: 'rating'),
                   const SizedBox(height: 16),
                 ],
 
-                // Offer / Price Tag Card
-                if (offer != null) ...[
+                // Pluggable Offer Socket / Price Tag
+                if (offerNode != null) ...[
                   Card(
                     color: theme.colorScheme.surfaceContainerHigh,
                     elevation: 0,
@@ -148,41 +125,28 @@ class ProductSchemaView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Price",
+                                "Offer Price",
                                 style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                "${offer['priceCurrency'] ?? '\$'}${offer['price'] ?? 'N/A'}",
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
+                              SchemaWidgetSocket(node: offerNode, slotName: 'offers'),
                             ],
                           ),
                           const Spacer(),
-                          if (offer['availability'] != null) ...[
-                            Chip(
-                              avatar: Icon(
-                                offer['availability'].toString().contains('InStock')
-                                    ? Icons.check_circle
-                                    : Icons.remove_circle,
-                                color: offer['availability'].toString().contains('InStock')
-                                    ? Colors.green
-                                    : Colors.orange,
-                              ),
-                              label: Text(
-                                offer['availability'].toString().contains('InStock')
-                                    ? "In Stock"
-                                    : "Out of Stock",
-                              ),
-                            ),
-                          ],
+                          const Chip(
+                            avatar: Icon(Icons.check_circle, color: Colors.green),
+                            label: Text("In Stock"),
+                          ),
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Pluggable Seller Socket Plugin (Female socket for Person / Business / Corporation)
+                if (sellerNode != null) ...[
+                  SchemaWidgetSocket(node: sellerNode, slotName: 'seller'),
                   const SizedBox(height: 16),
                 ],
 
@@ -274,26 +238,26 @@ class ProductSchemaView extends StatelessWidget {
     return res;
   }
 
-  Map<String, dynamic>? _extractOffer() {
+  JsonLdNode? _extractSellerNode() {
     final off = node.fields['offers']?.value;
-    if (off is JsonLdNode) {
-      return {
-        'price': off.fields['price']?.value,
-        'priceCurrency': off.fields['priceCurrency']?.value,
-        'availability': off.fields['availability']?.value,
-      };
+    if (off is JsonLdNode && off.fields.containsKey('seller')) {
+      final s = off.fields['seller']!.value;
+      if (s is JsonLdNode) return s;
     }
+    final sDirect = node.fields['seller']?.value;
+    if (sDirect is JsonLdNode) return sDirect;
     return null;
   }
 
-  Map<String, dynamic>? _extractRating() {
+  JsonLdNode? _extractOfferNode() {
+    final off = node.fields['offers']?.value;
+    if (off is JsonLdNode) return off;
+    return null;
+  }
+
+  JsonLdNode? _extractRatingNode() {
     final agg = node.fields['aggregateRating']?.value;
-    if (agg is JsonLdNode) {
-      return {
-        'ratingValue': agg.fields['ratingValue']?.value,
-        'reviewCount': agg.fields['reviewCount']?.value,
-      };
-    }
+    if (agg is JsonLdNode) return agg;
     return null;
   }
 
