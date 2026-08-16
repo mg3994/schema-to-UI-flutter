@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
 import '../specialized/product_schema_view.dart';
+import '../specialized/product_group_schema_view.dart';
 import '../specialized/recipe_schema_view.dart';
 import '../specialized/article_schema_view.dart';
 import '../specialized/event_schema_view.dart';
@@ -21,6 +22,10 @@ class SchemaRendererRouter extends StatelessWidget {
     final ontology = SchemaOntologyService();
 
     // Dynamically match type or subclass relationships using Schema.org ontology graph
+    if (ontology.isSubclassOf(typeName, 'ProductGroup')) {
+      return ProductGroupSchemaView(node: node);
+    }
+
     if (ontology.isSubclassOf(typeName, 'Product')) {
       return ProductSchemaView(node: node);
     }

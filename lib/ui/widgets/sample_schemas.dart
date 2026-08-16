@@ -47,6 +47,69 @@ class SampleSchemas {
   }
 }''';
 
+  static const String productGroupJson = '''{
+  "@context": "https://schema.org/",
+  "@type": "ProductGroup",
+  "name": "Pro Pro-Series Custom Laptop & Addons",
+  "description": "Customizable high-performance flagship laptop with nested variant configurations and official accessory addons.",
+  "brand": {
+    "@type": "Brand",
+    "name": "ProTech"
+  },
+  "variesBy": [
+    "https://schema.org/color",
+    "https://schema.org/size"
+  ],
+  "hasVariant": [
+    {
+      "@type": "Product",
+      "name": "Pro-Series Laptop (Space Gray / 16GB RAM)",
+      "color": "Space Gray",
+      "size": "16GB RAM / 512GB SSD",
+      "image": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+      "offers": {
+        "@type": "Offer",
+        "price": 1299.00,
+        "priceCurrency": "USD"
+      }
+    },
+    {
+      "@type": "Product",
+      "name": "Pro-Series Laptop (Silver / 32GB RAM)",
+      "color": "Silver",
+      "size": "32GB RAM / 1TB SSD",
+      "image": "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9",
+      "offers": {
+        "@type": "Offer",
+        "price": 1699.00,
+        "priceCurrency": "USD"
+      }
+    }
+  ],
+  "isRelatedTo": [
+    {
+      "@type": "Product",
+      "name": "ProCare Extended 2-Year Warranty Protection",
+      "description": "Accidental damage coverage and 24/7 priority support",
+      "offers": {
+        "@type": "Offer",
+        "price": 149.00,
+        "priceCurrency": "USD"
+      }
+    },
+    {
+      "@type": "Product",
+      "name": "ProDock USB-C Thunderbolt 4 Docking Station",
+      "description": "Dual 4K display output and 100W power delivery",
+      "offers": {
+        "@type": "Offer",
+        "price": 199.00,
+        "priceCurrency": "USD"
+      }
+    }
+  ]
+}''';
+
   static const String recipeJson = '''{
   "@context": "https://schema.org/",
   "@type": "Recipe",
@@ -201,6 +264,7 @@ class SampleSchemas {
 
   static final Map<String, String> presets = {
     "Product (E-Commerce)": productJson,
+    "Product Group & Addons": productGroupJson,
     "Recipe (Culinary)": recipeJson,
     "Article (News / Blog)": articleJson,
     "Event (Conference)": eventJson,
