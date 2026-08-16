@@ -6,6 +6,8 @@ import '../specialized/recipe_schema_view.dart';
 import '../specialized/article_schema_view.dart';
 import '../specialized/event_schema_view.dart';
 import '../specialized/organization_schema_view.dart';
+import '../specialized/howto_schema_view.dart';
+import '../specialized/place_schema_view.dart';
 import 'universal_schema_widget.dart';
 
 class SchemaRendererRouter extends StatelessWidget {
@@ -37,6 +39,14 @@ class SchemaRendererRouter extends StatelessWidget {
 
     if (ontology.isSubclassOf(typeName, 'Organization')) {
       return OrganizationSchemaView(node: node);
+    }
+
+    if (ontology.isSubclassOf(typeName, 'HowTo')) {
+      return HowToSchemaView(node: node);
+    }
+
+    if (ontology.isSubclassOf(typeName, 'Place')) {
+      return PlaceSchemaView(node: node);
     }
 
     // Universal Adaptive Renderer for all other Schema.org types and custom classes

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/schema_signal_controller.dart';
+import '../../models/schema_ontology.dart';
 
 class SchemaExplorerDialog extends StatefulWidget {
   final SchemaSignalController controller;
@@ -18,6 +19,19 @@ class SchemaExplorerDialog extends StatefulWidget {
 class _SchemaExplorerDialogState extends State<SchemaExplorerDialog> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedCategory = 'All';
+
+  final List<String> _categories = [
+    'All',
+    'CreativeWork',
+    'Event',
+    'Intangible',
+    'MedicalEntity',
+    'Organization',
+    'Person',
+    'Place',
+    'Product',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +39,14 @@ class _SchemaExplorerDialogState extends State<SchemaExplorerDialog> {
     final allClasses = widget.controller.ontologyService.classes.values.toList();
 
     final filteredClasses = allClasses.where((sc) {
+      // Category filter
+      if (_selectedCategory != 'All') {
+        if (!widget.controller.ontologyService.isSubclassOf(sc.id, _selectedCategory)) {
+          return false;
+        }
+      }
+
+      // Search query filter
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return sc.id.toLowerCase().contains(q) ||
@@ -35,8 +57,8 @@ class _SchemaExplorerDialogState extends State<SchemaExplorerDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: 650,
-        height: 700,
+        width: 700,
+        height: 750,
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +113,30 @@ class _SchemaExplorerDialogState extends State<SchemaExplorerDialog> {
                 });
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // Category Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _categories.map((cat) {
+                  final isSelected = _selectedCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: ChoiceChip(
+                      label: Text(cat),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedCategory = cat);
+                        }
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Class List
             Expanded(
@@ -143,7 +188,7 @@ class _SchemaExplorerDialogState extends State<SchemaExplorerDialog> {
                                 if (sc.properties.isNotEmpty) ...[
                                   const SizedBox(height: 4),
                                   Text(
-                                    "Associated properties: ${sc.properties.take(5).join(', ')}${sc.properties.length > 5 ? '...' : ''}",
+                                    "Properties (${sc.properties.length}): ${sc.properties.take(5).join(', ')}${sc.properties.length > 5 ? '...' : ''}",
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.secondary,
                                     ),
