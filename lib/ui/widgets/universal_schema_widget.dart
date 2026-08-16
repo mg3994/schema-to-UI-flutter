@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
+import '../../services/schema_ontology_service.dart';
 
 class UniversalSchemaWidget extends StatelessWidget {
   final JsonLdNode node;
@@ -386,33 +387,38 @@ class UniversalSchemaWidget extends StatelessWidget {
   }
 
   IconData _getIconForType(String typeName) {
-    switch (typeName.toLowerCase()) {
-      case 'product':
-        return Icons.shopping_bag;
-      case 'recipe':
-        return Icons.restaurant_menu;
-      case 'article':
-      case 'blogposting':
-      case 'newsarticle':
-        return Icons.article;
-      case 'event':
-        return Icons.event;
-      case 'person':
-        return Icons.person;
-      case 'organization':
-      case 'corporation':
-        return Icons.business;
-      case 'howto':
-        return Icons.build;
-      case 'review':
-        return Icons.star;
-      case 'offer':
-        return Icons.local_offer;
-      case 'place':
-      case 'postaladdress':
-        return Icons.location_on;
-      default:
-        return Icons.extension;
+    final ontology = SchemaOntologyService();
+
+    if (ontology.isSubclassOf(typeName, 'Product')) {
+      return Icons.shopping_bag;
     }
+    if (ontology.isSubclassOf(typeName, 'Recipe')) {
+      return Icons.restaurant_menu;
+    }
+    if (ontology.isSubclassOf(typeName, 'Article')) {
+      return Icons.article;
+    }
+    if (ontology.isSubclassOf(typeName, 'Event')) {
+      return Icons.event;
+    }
+    if (ontology.isSubclassOf(typeName, 'Person')) {
+      return Icons.person;
+    }
+    if (ontology.isSubclassOf(typeName, 'Organization')) {
+      return Icons.business;
+    }
+    if (ontology.isSubclassOf(typeName, 'HowTo')) {
+      return Icons.build;
+    }
+    if (ontology.isSubclassOf(typeName, 'Review') || ontology.isSubclassOf(typeName, 'Rating')) {
+      return Icons.star;
+    }
+    if (ontology.isSubclassOf(typeName, 'Offer')) {
+      return Icons.local_offer;
+    }
+    if (ontology.isSubclassOf(typeName, 'Place') || ontology.isSubclassOf(typeName, 'PostalAddress')) {
+      return Icons.location_on;
+    }
+    return Icons.extension;
   }
 }

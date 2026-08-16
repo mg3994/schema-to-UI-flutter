@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
+import '../../services/schema_ontology_service.dart';
 import '../specialized/product_schema_view.dart';
 import '../specialized/recipe_schema_view.dart';
 import '../specialized/article_schema_view.dart';
@@ -14,29 +15,34 @@ class SchemaRendererRouter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeName = node.primaryType.toLowerCase();
+    final String typeName = node.primaryType;
+    final ontology = SchemaOntologyService();
 
-    switch (typeName) {
-      case 'product':
-        return ProductSchemaView(node: node);
-      case 'recipe':
-        return RecipeSchemaView(node: node);
-      case 'article':
-      case 'blogposting':
-      case 'newsarticle':
-        return ArticleSchemaView(node: node);
-      case 'event':
-        return EventSchemaView(node: node);
-      case 'organization':
-      case 'corporation':
-      case 'company':
-        return OrganizationSchemaView(node: node);
-      default:
-        // Universal Adaptive Renderer for all other Schema.org types
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          child: UniversalSchemaWidget(node: node),
-        );
+    // Dynamically match type or subclass relationships using Schema.org ontology graph
+    if (ontology.isSubclassOf(typeName, 'Product')) {
+      return ProductSchemaView(node: node);
     }
+
+    if (ontology.isSubclassOf(typeName, 'Recipe')) {
+      return RecipeSchemaView(node: node);
+    }
+
+    if (ontology.isSubclassOf(typeName, 'Article')) {
+      return ArticleSchemaView(node: node);
+    }
+
+    if (ontology.isSubclassOf(typeName, 'Event')) {
+      return EventSchemaView(node: node);
+    }
+
+    if (ontology.isSubclassOf(typeName, 'Organization')) {
+      return OrganizationSchemaView(node: node);
+    }
+
+    // Universal Adaptive Renderer for all other Schema.org types and custom classes
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: UniversalSchemaWidget(node: node),
+    );
   }
 }
