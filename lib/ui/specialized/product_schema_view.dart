@@ -107,7 +107,7 @@ class ProductSchemaView extends StatelessWidget {
 
                 // Pluggable Rating Socket Plugin
                 if (ratingNode != null) ...[
-                  SchemaWidgetSocket(node: ratingNode, slotName: 'rating'),
+                  SchemaWidgetSocket(value: ratingNode, slotName: 'rating'),
                   const SizedBox(height: 16),
                 ],
 
@@ -129,7 +129,7 @@ class ProductSchemaView extends StatelessWidget {
                                 style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline),
                               ),
                               const SizedBox(height: 4),
-                              SchemaWidgetSocket(node: offerNode, slotName: 'offers'),
+                              SchemaWidgetSocket(value: offerNode, slotName: 'offers'),
                             ],
                           ),
                           const Spacer(),
@@ -146,7 +146,7 @@ class ProductSchemaView extends StatelessWidget {
 
                 // Pluggable Seller Socket Plugin (Female socket for Person / Business / Corporation)
                 if (sellerNode != null) ...[
-                  SchemaWidgetSocket(node: sellerNode, slotName: 'seller'),
+                  SchemaWidgetSocket(value: sellerNode, slotName: 'seller'),
                   const SizedBox(height: 16),
                 ],
 

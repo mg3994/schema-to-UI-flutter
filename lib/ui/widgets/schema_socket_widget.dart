@@ -7,7 +7,7 @@ import '../../services/schema_enum_resolver.dart';
 /// and dynamically slots it into the best fitting component socket.
 class SchemaWidgetSocket extends StatelessWidget {
   final dynamic value; // JsonLdNode, List, String (Enum URL), or Primitive
-  final String slotName; // e.g., 'seller', 'availability', 'location', 'offers'
+  final String slotName; // e.g., 'seller', 'availability', 'location', 'addOn', 'subjectOf'
 
   const SchemaWidgetSocket({
     super.key,
@@ -56,8 +56,20 @@ class SchemaWidgetSocket extends StatelessWidget {
         return RatingSocketPlugin(node: node);
       }
 
-      if (ontology.isSubclassOf(typeName, 'Place') || ontology.isSubclassOf(typeName, 'PostalAddress')) {
+      if (ontology.isSubclassOf(typeName, 'Place') || ontology.isSubclassOf(typeName, 'PostalAddress') || ontology.isSubclassOf(typeName, 'AdministrativeArea')) {
         return PlaceSocketPlugin(node: node);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'QuantitativeValue')) {
+        return QuantitativeValueSocketPlugin(node: node, slotName: slotName);
+      }
+
+      if (ontology.isSubclassOf(typeName, '3DModel') || typeName == '3DModel') {
+        return Model3DSocketPlugin(node: node);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'Certification')) {
+        return CertificationSocketPlugin(node: node);
       }
 
       return GenericNodeSocketPlugin(node: node, slotName: slotName);
@@ -85,7 +97,7 @@ class EnumSocketPlugin extends StatelessWidget {
   }
 }
 
-/// Seller Socket Plugin: Plugs Person, Business, Organization, or Corporation into a rich badge card
+/// Seller Socket Plugin: Plugs Person, Business, Organization, or Store into a rich badge card
 class SellerSocketPlugin extends StatelessWidget {
   final JsonLdNode node;
   final String slotName;
@@ -185,7 +197,7 @@ class SellerSocketPlugin extends StatelessWidget {
   }
 }
 
-/// Offer Socket Plugin: Plugs Offer or AggregateOffer into a price tag badge
+/// Offer Socket Plugin: Plugs Offer or AggregateOffer
 class OfferSocketPlugin extends StatelessWidget {
   final JsonLdNode node;
 
@@ -195,8 +207,9 @@ class OfferSocketPlugin extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final price = node.fields['price']?.value?.toString() ?? 'N/A';
-    final currency = node.fields['priceCurrency']?.value?.toString() ?? '\$';
+    final currency = node.fields['priceCurrency']?.value?.toString() ?? 'INR';
     final avail = node.fields['availability']?.value;
+    final itemOffered = node.fields['itemOffered']?.value;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -211,12 +224,18 @@ class OfferSocketPlugin extends StatelessWidget {
         children: [
           Icon(Icons.local_offer, size: 18, color: theme.colorScheme.primary),
           Text(
-            "$currency$price",
+            "$currency $price",
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
             ),
           ),
+          if (itemOffered is JsonLdNode) ...[
+            Text(
+              "for ${itemOffered.fields['name']?.value?.toString() ?? ''}",
+              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
           if (avail != null) SchemaWidgetSocket(value: avail, slotName: 'availability'),
         ],
       ),
@@ -224,7 +243,7 @@ class OfferSocketPlugin extends StatelessWidget {
   }
 }
 
-/// Rating Socket Plugin: Plugs Rating or AggregateRating into star indicators
+/// Rating Socket Plugin
 class RatingSocketPlugin extends StatelessWidget {
   final JsonLdNode node;
 
@@ -262,7 +281,7 @@ class RatingSocketPlugin extends StatelessWidget {
   }
 }
 
-/// Place Socket Plugin: Plugs Place or PostalAddress into a location chip
+/// Place Socket Plugin
 class PlaceSocketPlugin extends StatelessWidget {
   final JsonLdNode node;
 
@@ -280,6 +299,109 @@ class PlaceSocketPlugin extends StatelessWidget {
     return Chip(
       avatar: Icon(Icons.place, size: 16, color: theme.colorScheme.primary),
       label: Text(label.isNotEmpty ? label : "Location"),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+/// Quantitative Value Socket Plugin
+class QuantitativeValueSocketPlugin extends StatelessWidget {
+  final JsonLdNode node;
+  final String slotName;
+
+  const QuantitativeValueSocketPlugin({super.key, required this.node, required this.slotName});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final val = node.fields['value']?.value?.toString() ??
+        "${node.fields['minValue']?.value?.toString() ?? ''}-${node.fields['maxValue']?.value?.toString() ?? ''}";
+    final unit = node.fields['unitCode']?.value?.toString() ?? '';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        "$slotName: $val $unit",
+        style: theme.textTheme.labelSmall?.copyWith(fontFamily: 'monospace'),
+      ),
+    );
+  }
+}
+
+/// 3D Model Socket Plugin (AR Camera View Ready)
+class Model3DSocketPlugin extends StatelessWidget {
+  final JsonLdNode node;
+
+  const Model3DSocketPlugin({super.key, required this.node});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final encoding = node.fields['encoding']?.value;
+    String? contentUrl;
+    if (encoding is JsonLdNode) {
+      contentUrl = encoding.fields['contentUrl']?.value?.toString();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.tertiary.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.view_in_ar, size: 28, color: theme.colorScheme.tertiary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("3D Model / AR Interactive Preview",
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                if (contentUrl != null)
+                  Text(contentUrl,
+                      maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.view_in_ar, size: 16),
+            label: const Text("Launch AR"),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Launching 3D AR View for $contentUrl")),
+              );
+            },
+            style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Certification Socket Plugin
+class CertificationSocketPlugin extends StatelessWidget {
+  final JsonLdNode node;
+
+  const CertificationSocketPlugin({super.key, required this.node});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final certName = node.fields['name']?.value?.toString() ?? 'Certified';
+    final certId = node.fields['certificationIdentification']?.value?.toString();
+
+    return Chip(
+      avatar: const Icon(Icons.verified, size: 16, color: Colors.blue),
+      label: Text("$certName ${certId != null ? '(#$certId)' : ''}"),
       visualDensity: VisualDensity.compact,
     );
   }

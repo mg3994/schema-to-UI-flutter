@@ -47,64 +47,238 @@ class SampleSchemas {
   }
 }''';
 
-  static const String productGroupJson = '''{
-  "@context": "https://schema.org/",
+  static const String auraGlowProductGroupJson = '''{
+  "@context": "https://schema.org",
   "@type": "ProductGroup",
-  "name": "Pro Pro-Series Custom Laptop & Addons",
-  "description": "Customizable high-performance flagship laptop with nested variant configurations and official accessory addons.",
+  "name": "AuraGlow Smart Thermostat Series",
+  "description": "Premium 100% organic cotton crewneck collection featuring various colors, sizes, and optional personalization services.",
   "brand": {
     "@type": "Brand",
-    "name": "ProTech"
+    "name": "Antinna Pro Max"
   },
+  "audience": {
+    "@type": "PeopleAudience",
+    "suggestedGender": "unisex",
+    "suggestedAge": {
+      "@type": "QuantitativeValue",
+      "minValue": 13,
+      "unitCode": "ANN"
+    }
+  },
+  "image": [
+    "https://picsum.photos/800/600",
+    "https://picsum.photos/200/200"
+  ],
+  "productGroupID": "elite-crew-series",
+  "pattern": "striped",
   "variesBy": [
     "https://schema.org/color",
+    "https://schema.org/material",
     "https://schema.org/size"
   ],
   "hasVariant": [
     {
       "@type": "Product",
-      "name": "Pro-Series Laptop (Space Gray / 16GB RAM)",
-      "color": "Space Gray",
-      "size": "16GB RAM / 512GB SSD",
-      "image": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+      "name": "Elite Crewneck - Midnight Blue (Large)",
+      "sku": "EC-MB-L-001",
+      "gtin13": "8901234567890",
+      "color": "Midnight Blue",
+      "size": "Large",
+      "model": "TITAN-2024-XL",
+      "material": "Organic Cotton",
+      "image": [
+        "https://picsum.photos/300/200",
+        "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=800&q=80"
+      ],
+      "addOn": [
+        {
+          "@type": "Offer",
+          "areaServed": [
+            {
+              "@type": "City",
+              "name": "Gurugram"
+            },
+            {
+              "@type": "City",
+              "name": "Delhi"
+            },
+            {
+              "@type": "State",
+              "name": "Haryana"
+            }
+          ],
+          "price": "499.00",
+          "priceCurrency": "INR",
+          "eligibleQuantity": {
+            "@type": "QuantitativeValue",
+            "maxValue": 3,
+            "unitCode": "C62"
+          },
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Premium Gift Wrapping",
+            "image": "https://picsum.photos/300/200"
+          }
+        },
+        {
+          "@type": "Offer",
+          "price": "899.00",
+          "priceCurrency": "INR",
+          "eligibleQuantity": {
+            "@type": "QuantitativeValue",
+            "value": 1,
+            "minValue": 0,
+            "maxValue": 5,
+            "unitCode": "C62"
+          },
+          "inventoryLevel": {
+            "@type": "QuantitativeValue",
+            "value": "12",
+            "unitCode": "C62"
+          },
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Matching Cotton Cap",
+            "sku": "CAP-001",
+            "image": "https://picsum.photos/300/200"
+          }
+        },
+        {
+          "@type": "Offer",
+          "price": "199.00",
+          "priceCurrency": "INR",
+          "eligibleQuantity": {
+            "@type": "QuantitativeValue",
+            "minValue": 1,
+            "maxValue": 10,
+            "unitCode": "C62"
+          },
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Custom Embroidery Characters"
+          }
+        }
+      ],
+      "weight": {
+        "@type": "QuantitativeValue",
+        "value": "0.35",
+        "unitCode": "KGM"
+      },
+      "height": {
+        "@type": "QuantitativeValue",
+        "value": "75",
+        "unitCode": "CMT"
+      },
+      "width": {
+        "@type": "QuantitativeValue",
+        "value": "55",
+        "unitCode": "CMT"
+      },
       "offers": {
         "@type": "Offer",
-        "price": 1299.00,
-        "priceCurrency": "USD"
+        "areaServed": [
+          {
+            "@type": "City",
+            "name": "Gurugram"
+          },
+          {
+            "@type": "City",
+            "name": "Delhi"
+          },
+          {
+            "@type": "State",
+            "name": "Haryana"
+          }
+        ],
+        "price": "38851.00",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStock",
+        "itemCondition": "https://schema.org/NewCondition",
+        "inventoryLevel": {
+          "@type": "QuantitativeValue",
+          "value": "150",
+          "unitCode": "C62"
+        },
+        "deliveryLeadTime": {
+          "@type": "QuantitativeValue",
+          "value": "2",
+          "unitCode": "DAY"
+        },
+        "acceptedPaymentMethod": [
+          "https://schema.org/CreditCard",
+          "https://schema.org/Cash"
+        ],
+        "seller": {
+          "@type": "LocalBusiness",
+          "name": "Downtown Threads - New Delhi Flagship",
+          "telephone": "+91-11-23456789",
+          "email": "contact@antinna-industrial.com",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "148 W 51st St",
+            "addressLocality": "New York",
+            "addressRegion": "NY",
+            "postalCode": "127310",
+            "addressCountry": "US"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "28.6315",
+            "longitude": "77.2167"
+          }
+        }
       }
     },
     {
       "@type": "Product",
-      "name": "Pro-Series Laptop (Silver / 32GB RAM)",
-      "color": "Silver",
-      "size": "32GB RAM / 1TB SSD",
-      "image": "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9",
+      "name": "Elite Crewneck - Crimson Red (Medium) - IN STORE EXCLUSIVE",
+      "sku": "EC-CR-M-002",
+      "mpn": "TITAN-RED-M",
+      "color": "Crimson Red",
+      "model": "TITAN-2024-X",
+      "size": "Medium",
+      "material": "Organic Cotton",
+      "image": "https://picsum.photos/400/200",
+      "hasCertification": {
+        "@type": "Certification",
+        "issuedBy": {
+          "@type": "Organization",
+          "name": "European_Commission"
+        },
+        "name": "EPREL",
+        "certificationIdentification": "123456"
+      },
+      "subjectOf": {
+        "@type": "3DModel",
+        "encoding": {
+          "@type": "MediaObject",
+          "contentUrl": "https://raw.githubusercontent.com/ToxSam/cc0-models-Polygonal-Mind/main/projects/tomb-chaser-1/Coins_Art.glb"
+        }
+      },
       "offers": {
         "@type": "Offer",
-        "price": 1699.00,
-        "priceCurrency": "USD"
-      }
-    }
-  ],
-  "isRelatedTo": [
-    {
-      "@type": "Product",
-      "name": "ProCare Extended 2-Year Warranty Protection",
-      "description": "Accidental damage coverage and 24/7 priority support",
-      "offers": {
-        "@type": "Offer",
-        "price": 149.00,
-        "priceCurrency": "USD"
-      }
-    },
-    {
-      "@type": "Product",
-      "name": "ProDock USB-C Thunderbolt 4 Docking Station",
-      "description": "Dual 4K display output and 100W power delivery",
-      "offers": {
-        "@type": "Offer",
-        "price": 199.00,
-        "priceCurrency": "USD"
+        "price": "38852.00",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStoreOnly",
+        "availableDeliveryMethod": "https://schema.org/OnSitePickup",
+        "itemCondition": "https://schema.org/NewCondition",
+        "inventoryLevel": {
+          "@type": "QuantitativeValue",
+          "value": "12",
+          "unitCode": "C62"
+        },
+        "validThrough": "2026-12-31T23:59:59Z",
+        "seller": {
+          "@type": "Store",
+          "name": "Downtown Threads - Saket Outlet",
+          "telephone": "+91-11-98765432",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Select Citywalk, Saket",
+            "addressLocality": "New Delhi",
+            "addressCountry": "IN"
+          }
+        }
       }
     }
   ]
@@ -264,7 +438,7 @@ class SampleSchemas {
 
   static final Map<String, String> presets = {
     "Product (E-Commerce)": productJson,
-    "Product Group & Addons": productGroupJson,
+    "Product Group (Nesting, 3D, AddOns)": auraGlowProductGroupJson,
     "Recipe (Culinary)": recipeJson,
     "Article (News / Blog)": articleJson,
     "Event (Conference)": eventJson,
