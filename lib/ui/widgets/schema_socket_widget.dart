@@ -219,7 +219,7 @@ class OfferSocketPlugin extends StatelessWidget {
         border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
       ),
       child: Wrap(
-        cross: WrapCrossAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 8,
         children: [
           Icon(Icons.local_offer, size: 18, color: theme.colorScheme.primary),

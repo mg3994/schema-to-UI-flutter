@@ -33,7 +33,7 @@ void main() {
 
       expect(find.text("Super Gaming Laptop"), findsOneWidget);
       expect(find.text("TECHCORP"), findsOneWidget);
-      expect(find.text("USD1499.99"), findsOneWidget);
+      expect(find.text("USD 1499.99"), findsOneWidget);
       expect(find.text("In Stock"), findsOneWidget);
     });
 
