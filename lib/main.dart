@@ -22,6 +22,16 @@ class SchemaApp extends StatefulWidget {
 
 class _SchemaAppState extends State<SchemaApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  Color _colorSeed = Colors.indigo;
+
+  final List<Color> _availableColorSeeds = const [
+    Colors.indigo,
+    Colors.teal,
+    Colors.deepOrange,
+    Colors.purple,
+    Colors.emerald,
+    Colors.rose,
+  ];
 
   void _toggleTheme() {
     setState(() {
@@ -33,6 +43,12 @@ class _SchemaAppState extends State<SchemaApp> {
         final brightness = MediaQuery.of(context).platformBrightness;
         _themeMode = brightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark;
       }
+    });
+  }
+
+  void _changeColorSeed(Color color) {
+    setState(() {
+      _colorSeed = color;
     });
   }
 
@@ -48,19 +64,27 @@ class _SchemaAppState extends State<SchemaApp> {
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.indigo,
+        colorSchemeSeed: _colorSeed,
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.indigo,
+        colorSchemeSeed: _colorSeed,
         brightness: Brightness.dark,
       ),
       home: HomeScreen(
         controller: widget.controller,
         onToggleTheme: _toggleTheme,
         isDarkMode: isDark,
+        currentColorSeed: _colorSeed,
+        availableColorSeeds: _availableColorSeeds,
+        onChangeColorSeed: _changeColorSeed,
       ),
     );
   }
+}
+
+extension ColorExtensions on Colors {
+  static const Color emerald = Color(0xFF10B981);
+  static const Color rose = Color(0xFFF43F5E);
 }

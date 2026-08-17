@@ -6,17 +6,24 @@ import '../../services/json_ld_parser.dart';
 import '../widgets/sample_schemas.dart';
 import '../widgets/schema_renderer_router.dart';
 import '../widgets/schema_explorer_dialog.dart';
+import '../widgets/schema_graph_visualizer_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   final SchemaSignalController controller;
   final VoidCallback onToggleTheme;
   final bool isDarkMode;
+  final Color currentColorSeed;
+  final List<Color> availableColorSeeds;
+  final ValueChanged<Color> onChangeColorSeed;
 
   const HomeScreen({
     super.key,
     required this.controller,
     required this.onToggleTheme,
     required this.isDarkMode,
+    required this.currentColorSeed,
+    required this.availableColorSeeds,
+    required this.onChangeColorSeed,
   });
 
   @override
@@ -96,6 +103,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           actions: [
+            // Color Seed Picker Popup Menu
+            PopupMenuButton<Color>(
+              icon: Icon(Icons.palette_outlined, color: theme.colorScheme.primary),
+              tooltip: "Change Accent Theme Seed",
+              onSelected: widget.onChangeColorSeed,
+              itemBuilder: (context) {
+                return widget.availableColorSeeds.map((color) {
+                  return PopupMenuItem<Color>(
+                    value: color,
+                    child: Row(
+                      children: [
+                        CircleAvatar(radius: 10, backgroundColor: color),
+                        const SizedBox(width: 8),
+                        Text(color == widget.currentColorSeed ? "Active Seed" : "Theme Accent"),
+                      ],
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+
+            // Graph Visualizer Trigger
+            IconButton(
+              icon: const Icon(Icons.hub_outlined),
+              tooltip: "Graph Network Visualizer",
+              onPressed: () {
+                final current = widget.controller.currentSchemaNode.value;
+                if (current != null) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => SchemaGraphVisualizerDialog(rootNode: current),
+                  );
+                }
+              },
+            ),
+
             // Active Locale Control Dropdown
             Container(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
