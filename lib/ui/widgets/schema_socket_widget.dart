@@ -125,6 +125,60 @@ class _ActionSocketPluginState extends State<ActionSocketPlugin> {
     super.dispose();
   }
 
+  void _showActionFormDialog() {
+    final name = widget.node.fields['name']?.value?.toString() ?? widget.node.primaryType;
+    final target = widget.node.fields['target']?.value?.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.touch_app, color: Colors.indigo),
+              const SizedBox(width: 8),
+              Text("Execute $name"),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Action Type: ${widget.node.primaryType}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              if (target != null) ...[
+                const SizedBox(height: 4),
+                Text("Target endpoint: $target", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _inputController,
+                decoration: const InputDecoration(
+                  labelText: "Payload Parameter / Search Query",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Simulated execution of $name with payload: '${_inputController.text}'")),
+                );
+              },
+              child: const Text("Confirm & Submit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -174,11 +228,7 @@ class _ActionSocketPluginState extends State<ActionSocketPlugin> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.send, size: 16),
                 label: Text("Trigger $name"),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Executed $name with payload: '${_inputController.text}'")),
-                  );
-                },
+                onPressed: _showActionFormDialog,
                 style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
               ),
             ),
