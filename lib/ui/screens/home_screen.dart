@@ -485,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 title: Text("Female Socket Slot: [ ${soc['slot']} ]", style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text("Plugged Male Component: ${soc['type']} (${soc['name']})"),
                 trailing: Chip(
-                  label: Text(soc['type']),
+                  label: Text(soc['type'] ?? ''),
                   visualDensity: VisualDensity.compact,
                 ),
               ),
