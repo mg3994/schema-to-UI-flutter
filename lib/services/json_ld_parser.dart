@@ -25,7 +25,17 @@ class JsonLdNode {
 
   String get primaryType => type ?? 'Thing';
 
-  static JsonLdNode parse(Map<String, dynamic> json) {
+  static JsonLdNode parse(Map<String, dynamic> json, [Map<String, Map<String, dynamic>>? idRegistry]) {
+    // If top-level @graph exists, build ID registry first for reference resolution
+    idRegistry ??= <String, Map<String, dynamic>>{};
+    if (json.containsKey('@graph') && json['@graph'] is List) {
+      for (var item in json['@graph']) {
+        if (item is Map<String, dynamic> && item.containsKey('@id')) {
+          idRegistry[item['@id'].toString()] = item;
+        }
+      }
+    }
+
     String? type;
     final rawType = json['@type'];
     if (rawType is String) {
@@ -39,7 +49,7 @@ class JsonLdNode {
     final fields = <String, JsonLdField>{};
     json.forEach((key, val) {
       if (key.startsWith('@')) return; // Skip LD metadata keywords like @context, @type, @id
-      fields[key] = JsonLdField.parse(key, val);
+      fields[key] = JsonLdField.parse(key, val, idRegistry);
     });
 
     return JsonLdNode(
@@ -69,12 +79,22 @@ class JsonLdField {
     required this.valueType,
   });
 
-  factory JsonLdField.parse(String key, dynamic val) {
+  factory JsonLdField.parse(String key, dynamic val, [Map<String, Map<String, dynamic>>? idRegistry]) {
     if (val == null) {
       return JsonLdField(key: key, value: null, valueType: JsonLdValueType.nullValue);
     }
 
     if (val is Map<String, dynamic>) {
+      // Resolve internal @id reference pointers across @graph
+      if (val.length == 1 && val.containsKey('@id') && idRegistry != null && idRegistry.containsKey(val['@id'])) {
+        final resolvedMap = idRegistry[val['@id']]!;
+        return JsonLdField(
+          key: key,
+          value: JsonLdNode.parse(resolvedMap, idRegistry),
+          valueType: JsonLdValueType.object,
+        );
+      }
+
       // Support @value and multilingual objects like {"@value": "Running Shoes", "@language": "en-US"}
       if (val.containsKey('@value')) {
         final rawVal = val['@value'];
@@ -86,7 +106,7 @@ class JsonLdField {
       }
       return JsonLdField(
         key: key,
-        value: JsonLdNode.parse(val),
+        value: JsonLdNode.parse(val, idRegistry),
         valueType: JsonLdValueType.object,
       );
     }
@@ -94,20 +114,22 @@ class JsonLdField {
     if (val is List) {
       final parsedList = val.map((e) {
         if (e is Map<String, dynamic>) {
-          // Check if list item is a @value language map
+          if (e.length == 1 && e.containsKey('@id') && idRegistry != null && idRegistry.containsKey(e['@id'])) {
+            return JsonLdNode.parse(idRegistry[e['@id']]!, idRegistry);
+          }
+
           if (e.containsKey('@value')) {
             return e['@value'];
           }
-          return JsonLdNode.parse(e);
+          return JsonLdNode.parse(e, idRegistry);
         }
         return e;
       }).toList();
 
-      // If array items were collapsed to plain string/primitives (e.g. multilingual names)
       if (parsedList.isNotEmpty && parsedList.every((item) => item is String)) {
         return JsonLdField(
           key: key,
-          value: parsedList.first, // Extract primary string representation
+          value: parsedList.first,
           valueType: JsonLdValueType.string,
         );
       }

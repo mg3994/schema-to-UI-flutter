@@ -3,6 +3,7 @@ import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
 import '../../services/schema_enum_resolver.dart';
 import '../../services/schema_locale_text_extractor.dart';
+import '../../services/schema_socket_registry.dart';
 
 /// Universal Plug-and-Play Socket Manager that accepts any nested Schema.org node or value
 /// and dynamically slots it into the best fitting component socket.
@@ -55,6 +56,12 @@ class SchemaWidgetSocket extends StatelessWidget {
       final ontology = SchemaOntologyService();
       final typeName = node.primaryType;
 
+      // Check dynamic runtime registry first
+      final registry = SchemaSocketRegistry();
+      if (registry.hasSocketBuilder(typeName)) {
+        return registry.getSocketBuilder(typeName)!(context, node, slotName);
+      }
+
       if (ontology.isSubclassOf(typeName, 'Organization') || ontology.isSubclassOf(typeName, 'Person')) {
         return SellerSocketPlugin(node: node, slotName: slotName);
       }
@@ -83,10 +90,103 @@ class SchemaWidgetSocket extends StatelessWidget {
         return CertificationSocketPlugin(node: node);
       }
 
+      if (ontology.isSubclassOf(typeName, 'Action')) {
+        return ActionSocketPlugin(node: node, slotName: slotName);
+      }
+
+      if (ontology.isSubclassOf(typeName, 'MediaObject') || ontology.isSubclassOf(typeName, 'VideoObject') || ontology.isSubclassOf(typeName, 'AudioObject')) {
+        return MediaSocketPlugin(node: node);
+      }
+
       return GenericNodeSocketPlugin(node: node, slotName: slotName);
     }
 
     return SelectableText(value.toString());
+  }
+}
+
+/// Action Socket Plugin: Interactive Trigger Card for Schema.org Action types
+class ActionSocketPlugin extends StatelessWidget {
+  final JsonLdNode node;
+  final String slotName;
+
+  const ActionSocketPlugin({super.key, required this.node, required this.slotName});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final name = node.fields['name']?.value?.toString() ?? node.primaryType;
+    final target = node.fields['target']?.value?.toString();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.touch_app, color: theme.colorScheme.primary, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Action: $name", style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                if (target != null) Text(target, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelSmall),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Triggered Action: $name")),
+              );
+            },
+            style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
+            child: const Text("Execute"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Media Socket Plugin: Media Player simulation for VideoObject, AudioObject, ImageObject
+class MediaSocketPlugin extends StatelessWidget {
+  final JsonLdNode node;
+
+  const MediaSocketPlugin({super.key, required this.node});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final name = node.fields['name']?.value?.toString() ?? node.primaryType;
+    final contentUrl = node.fields['contentUrl']?.value?.toString() ?? node.fields['url']?.value?.toString();
+    final isVideo = node.primaryType.contains('Video');
+    final isAudio = node.primaryType.contains('Audio');
+
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.secondaryContainer,
+          child: Icon(isVideo ? Icons.videocam : (isAudio ? Icons.audiotrack : Icons.image), size: 20),
+        ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: contentUrl != null ? Text(contentUrl, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+        trailing: IconButton(
+          icon: Icon(isVideo || isAudio ? Icons.play_circle_fill : Icons.remove_red_eye),
+          color: theme.colorScheme.primary,
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Playing Media Preview for $name")),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
