@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
 import '../../services/schema_enum_resolver.dart';
+import '../../services/schema_locale_text_extractor.dart';
 
 /// Universal Plug-and-Play Socket Manager that accepts any nested Schema.org node or value
 /// and dynamically slots it into the best fitting component socket.
@@ -19,6 +20,25 @@ class SchemaWidgetSocket extends StatelessWidget {
   Widget build(BuildContext context) {
     if (value == null) return const SizedBox.shrink();
 
+    // Handle Multilingual @value / @language maps and primitives
+    if (value is List) {
+      final list = value as List;
+      if (list.isNotEmpty && list.first is Map && (list.first as Map).containsKey('@value')) {
+        final extractedText = SchemaLocaleTextExtractor.extract(list, context);
+        return SelectableText(extractedText);
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: list.map((item) => SchemaWidgetSocket(value: item, slotName: slotName)).toList(),
+      );
+    }
+
+    if (value is Map && (value as Map).containsKey('@value')) {
+      final extractedText = SchemaLocaleTextExtractor.extract(value, context);
+      return SelectableText(extractedText);
+    }
+
     // Handle String / Enum URLs
     if (value is String) {
       final str = value.toString();
@@ -27,15 +47,6 @@ class SchemaWidgetSocket extends StatelessWidget {
         return EnumSocketPlugin(details: enumDetails);
       }
       return SelectableText(str);
-    }
-
-    // Handle Lists
-    if (value is List) {
-      final list = value as List;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: list.map((item) => SchemaWidgetSocket(value: item, slotName: slotName)).toList(),
-      );
     }
 
     // Handle JsonLdNode
@@ -294,7 +305,8 @@ class PlaceSocketPlugin extends StatelessWidget {
     final street = node.fields['streetAddress']?.value?.toString();
     final city = node.fields['addressLocality']?.value?.toString();
 
-    final label = "${name != null ? '$name, ' : ''}${street != null ? '$street, ' : ''}${city ?? ''}";
+    final parts = [name, street, city].where((p) => p != null && p.trim().isNotEmpty).toList();
+    final label = parts.join(', ');
 
     return Chip(
       avatar: Icon(Icons.place, size: 16, color: theme.colorScheme.primary),

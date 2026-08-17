@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import '../../providers/schema_signal_controller.dart';
 import '../../services/json_ld_parser.dart';
@@ -25,7 +26,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _jsonInputController = TextEditingController();
+  final TextEditingController _inspectorSearchController = TextEditingController();
   String _selectedPresetName = "Product (E-Commerce)";
+  String _inspectorSearchQuery = '';
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _jsonInputController.dispose();
+    _inspectorSearchController.dispose();
     super.dispose();
   }
 
@@ -71,6 +75,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.copy),
+            tooltip: "Copy JSON-LD Payload",
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _jsonInputController.text));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("JSON-LD payload copied to clipboard!")),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             tooltip: "Toggle Light/Dark Theme",
@@ -286,6 +300,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+
+                              // Search Inspector Bar
+                              TextField(
+                                controller: _inspectorSearchController,
+                                decoration: InputDecoration(
+                                  hintText: "Filter node keys or values...",
+                                  prefixIcon: const Icon(Icons.search, size: 18),
+                                  isDense: true,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  suffixIcon: _inspectorSearchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear, size: 16),
+                                          onPressed: () {
+                                            _inspectorSearchController.clear();
+                                            setState(() => _inspectorSearchQuery = '');
+                                          },
+                                        )
+                                      : null,
+                                ),
+                                onChanged: (val) {
+                                  setState(() {
+                                    _inspectorSearchQuery = val;
+                                  });
+                                },
+                              ),
                               const Divider(),
                               Expanded(
                                 child: currentSchema == null
@@ -340,6 +380,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildRawNodeInspector(BuildContext context, dynamic node, [int depth = 0]) {
     final theme = Theme.of(context);
+    final query = _inspectorSearchQuery.toLowerCase();
+
     if (node is JsonLdNode) {
       return Padding(
         padding: EdgeInsets.only(left: depth * 12.0),
@@ -361,7 +403,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
             const SizedBox(height: 4),
-            ...node.fields.entries.map((e) {
+            ...node.fields.entries.where((e) {
+              if (query.isEmpty) return true;
+              final keyMatch = e.key.toLowerCase().contains(query);
+              final valMatch = e.value.value.toString().toLowerCase().contains(query);
+              return keyMatch || valMatch;
+            }).map((e) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Row(
@@ -369,7 +416,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   children: [
                     Text(
                       "${e.key}: ",
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        backgroundColor: query.isNotEmpty && e.key.toLowerCase().contains(query)
+                            ? Colors.yellow.withOpacity(0.4)
+                            : null,
+                      ),
                     ),
                     Expanded(
                       child: _buildRawNodeInspector(context, e.value.value, depth + 1),
@@ -389,9 +441,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             .toList(),
       );
     } else {
+      final str = node.toString();
+      final isMatch = query.isNotEmpty && str.toLowerCase().contains(query);
+
       return Text(
-        node.toString(),
-        style: TextStyle(color: theme.colorScheme.primary),
+        str,
+        style: TextStyle(
+          color: theme.colorScheme.primary,
+          backgroundColor: isMatch ? Colors.yellow.withOpacity(0.4) : null,
+        ),
       );
     }
   }
