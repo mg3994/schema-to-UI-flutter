@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/json_ld_parser.dart';
 import '../../services/schema_ontology_service.dart';
 import 'schema_socket_widget.dart';
+import 'schema_image_lightbox.dart';
 
 class UniversalSchemaWidget extends StatelessWidget {
   final JsonLdNode node;
@@ -89,20 +90,24 @@ class UniversalSchemaWidget extends StatelessWidget {
             ),
           ),
 
-          // Header Image Gallery / Hero
+          // Header Image Gallery / Hero with Lightbox Gesture Support
           if (imageUrls.isNotEmpty)
             SizedBox(
               height: 200,
               child: PageView.builder(
                 itemCount: imageUrls.length,
                 itemBuilder: (context, index) {
-                  return Image.network(
-                    imageUrls[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                  final url = imageUrls[index];
+                  return GestureDetector(
+                    onTap: () => SchemaImageLightbox.show(context, url, title),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: const Center(
+                          child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                        ),
                       ),
                     ),
                   );
@@ -229,6 +234,7 @@ class UniversalSchemaWidget extends StatelessWidget {
         );
 
       case JsonLdValueType.image:
+        final imgUrl = field.value.toString();
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 6.0),
           child: Column(
@@ -241,17 +247,20 @@ class UniversalSchemaWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  field.value.toString(),
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 100,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: Icon(Icons.broken_image)),
+              GestureDetector(
+                onTap: () => SchemaImageLightbox.show(context, imgUrl, formattedKey),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imgUrl,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 100,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: const Center(child: Icon(Icons.broken_image)),
+                    ),
                   ),
                 ),
               ),
