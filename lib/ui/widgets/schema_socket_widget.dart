@@ -105,50 +105,85 @@ class SchemaWidgetSocket extends StatelessWidget {
   }
 }
 
-/// Action Socket Plugin: Interactive Trigger Card for Schema.org Action types
-class ActionSocketPlugin extends StatelessWidget {
+/// Action Socket Plugin: Interactive Trigger & Form Card for Schema.org Action types
+class ActionSocketPlugin extends StatefulWidget {
   final JsonLdNode node;
   final String slotName;
 
   const ActionSocketPlugin({super.key, required this.node, required this.slotName});
 
   @override
+  State<ActionSocketPlugin> createState() => _ActionSocketPluginState();
+}
+
+class _ActionSocketPluginState extends State<ActionSocketPlugin> {
+  final TextEditingController _inputController = TextEditingController();
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final name = node.fields['name']?.value?.toString() ?? node.primaryType;
-    final target = node.fields['target']?.value?.toString();
+    final name = widget.node.fields['name']?.value?.toString() ?? widget.node.primaryType;
+    final target = widget.node.fields['target']?.value?.toString();
+    final queryInput = widget.node.fields['query-input']?.value?.toString();
 
-    return Container(
+    return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.touch_app, color: theme.colorScheme.primary, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text("Action: $name", style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                if (target != null) Text(target, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelSmall),
+                Icon(Icons.touch_app, color: theme.colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Action Slot: $name",
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Chip(
+                  label: Text(widget.node.primaryType),
+                  visualDensity: VisualDensity.compact,
+                ),
               ],
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Triggered Action: $name")),
-              );
-            },
-            style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
-            child: const Text("Execute"),
-          ),
-        ],
+            if (target != null) ...[
+              const SizedBox(height: 4),
+              Text("Target URL: $target", style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
+            ],
+            const SizedBox(height: 8),
+            TextField(
+              controller: _inputController,
+              decoration: InputDecoration(
+                hintText: queryInput != null ? "Enter $queryInput..." : "Type action payload input...",
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.send, size: 16),
+                label: Text("Trigger $name"),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Executed $name with payload: '${_inputController.text}'")),
+                  );
+                },
+                style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
