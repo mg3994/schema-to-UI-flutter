@@ -9,6 +9,7 @@ import '../specialized/event_schema_view.dart';
 import '../specialized/organization_schema_view.dart';
 import '../specialized/howto_schema_view.dart';
 import '../specialized/place_schema_view.dart';
+import '../specialized/software_app_schema_view.dart';
 import 'universal_schema_widget.dart';
 
 class SchemaRendererRouter extends StatelessWidget {
@@ -22,6 +23,10 @@ class SchemaRendererRouter extends StatelessWidget {
     final ontology = SchemaOntologyService();
 
     // Dynamically match type or subclass relationships using Schema.org ontology graph
+    if (ontology.isSubclassOf(typeName, 'SoftwareApplication')) {
+      return SoftwareAppSchemaView(node: node);
+    }
+
     if (ontology.isSubclassOf(typeName, 'ProductGroup')) {
       return ProductGroupSchemaView(node: node);
     }
